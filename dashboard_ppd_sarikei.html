@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPD Sarikei - Dashboard Berpusat</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        ppd: {
+                            blue: '#1e3a8a',
+                            lightblue: '#e0f2fe',
+                            accent: '#3b82f6',
+                            text: '#1f2937',
+                            gray: '#f3f4f6',
+                            border: '#e5e7eb'
+                        },
+                        status: {
+                            green: '#22c55e',
+                            red: '#ef4444',
+                            yellow: '#eab308'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card { background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); padding: 1rem; }
+        .sidebar-item { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.375rem; margin-bottom: 0.25rem; transition: background-color 0.2s; color: white; opacity: 0.8;}
+        .sidebar-item:hover { background-color: rgba(255,255,255,0.1); opacity: 1; cursor: pointer;}
+        .sidebar-item.active { background-color: rgba(255,255,255,0.2); font-weight: 600; opacity: 1;}
+        .sidebar-icon { margin-right: 0.75rem; width: 20px; height: 20px; }
+    </style>
+</head>
+
+<body class="text-gray-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-ppd-blue text-white flex flex-col hidden md:flex h-full flex-shrink-0 relative z-20">
+        <!-- Logo Area -->
+        <div class="p-4 border-b border-blue-800 flex items-center space-x-3">
+            <div class="bg-white p-1 rounded-full w-10 h-10 flex items-center justify-center text-ppd-blue">
+                <i data-lucide="school" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm">PPD SARIKEI</h1>
+                <p class="text-xs text-blue-200">Dashboard Berpusat</p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            <a href="#" class="sidebar-item active">
+                <i data-lucide="home" class="sidebar-icon"></i> Utama
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="users" class="sidebar-icon"></i> Pengurusan
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="book-open" class="sidebar-icon"></i> Akademik
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="heart-handshake" class="sidebar-icon"></i> HEM
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="activity" class="sidebar-icon"></i> Kokurikulum
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="monitor" class="sidebar-icon"></i> ICT
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="dollar-sign" class="sidebar-icon"></i> Kewangan
+            </a>
+            <a href="#" class="sidebar-item">
+                <i data-lucide="building" class="sidebar-icon"></i> Infrastruktur
+            </a>
+            <div class="pt-4 mt-4 border-t border-blue-800">
+                <a href="#" class="sidebar-item">
+                    <i data-lucide="file-text" class="sidebar-icon"></i> Laporan
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i data-lucide="settings" class="sidebar-icon"></i> Tetapan
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative z-10">
+        
+        <!-- Topbar -->
+        <header class="bg-white shadow-sm z-10 p-4 flex justify-between items-center border-b">
+            <div class="flex items-center md:hidden">
+                 <button class="p-2 text-gray-500 hover:text-gray-700">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h1 class="ml-2 font-bold text-ppd-blue truncate">PAPARAN DASHBOARD</h1>
+            </div>
+            
+            <div class="hidden md:flex flex-1 justify-center">
+                 <h2 class="text-xl font-bold text-ppd-blue tracking-wide">PAPARAN DASHBOARD CADANGAN</h2>
+            </div>
+
+            <!-- Header Controls -->
+            <div class="flex flex-wrap items-center space-x-2 md:space-x-4 text-sm mt-2 sm:mt-0 justify-end w-full sm:w-auto">
+                <div class="flex space-x-2">
+                    <select class="border rounded px-2 py-1 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>Tahun: 2024</option>
+                    </select>
+                    <select class="border rounded px-2 py-1 bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 hidden sm:block">
+                        <option>Tempoh: Mei 2024</option>
+                    </select>
+                </div>
+                
+                <div class="text-xs text-gray-500 hidden lg:flex items-center space-x-1 border-l pl-4 ml-2">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                    <span>Kemaskini Terakhir<br>20 Mei 2024 10:30 AM</span>
+                </div>
+                
+                <div class="flex items-center space-x-3 pl-2 sm:border-l sm:pl-4">
+                    <button class="text-gray-500 hover:text-blue-600 relative">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    </button>
+                    <div class="flex items-center space-x-2 cursor-pointer">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-semibold leading-none text-gray-800">Selamat Datang,</p>
+                            <p class="text-xs text-gray-500">Pentadbir Sistem</p>
+                        </div>
+                        <div class="bg-blue-100 p-1.5 rounded-full text-blue-600">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content Scrollable Area -->
+        <div class="flex-1 overflow-auto p-4 md:p-6 bg-slate-50">
+            <div class="max-w-7xl mx-auto space-y-6">
+                
+                <!-- KPI Utama (Ringkasan) -->
+                <section>
+                    <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wider">KPI Utama (Ringkasan)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <!-- Card 1 -->
+                        <div class="card text-center relative overflow-hidden group">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                            <p class="text-xs text-gray-500 font-medium mb-1">Kehadiran Murid</p>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-1">95.6%</h4>
+                            <p class="text-xs text-green-600 flex justify-center items-center font-medium">
+                                <i data-lucide="arrow-up" class="w-3 h-3 mr-1"></i> 2.1% berbanding bulan lepas
+                            </p>
+                        </div>
+                        <!-- Card 2 -->
+                        <div class="card text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500"></div>
+                            <p class="text-xs text-gray-500 font-medium mb-1">Kadar Kelulusan<br><span class="text-[10px]">UPSR/PSRA/PT3/SPM</span></p>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-1">92.3%</h4>
+                            <p class="text-xs text-green-600 flex justify-center items-center font-medium">
+                                <i data-lucide="arrow-up" class="w-3 h-3 mr-1"></i> 1.8% berbanding tahun lepas
+                            </p>
+                        </div>
+                        <!-- Card 3 -->
+                        <div class="card text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500"></div>
+                            <p class="text-xs text-gray-500 font-medium mb-1">Sekolah Aktif Dashboard</p>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-0">63 / 63</h4>
+                            <p class="text-xs text-gray-500 font-medium mb-1">100%</p>
+                            <p class="text-xs text-gray-500">Semua sekolah aktif</p>
+                        </div>
+                        <!-- Card 4 -->
+                        <div class="card text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-orange-400"></div>
+                            <p class="text-xs text-gray-500 font-medium mb-1">Laporan Dijana (Bulan Ini)</p>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-1">128</h4>
+                            <p class="text-xs text-green-600 flex justify-center items-center font-medium">
+                                <i data-lucide="arrow-up" class="w-3 h-3 mr-1"></i> 25.5% berbanding bulan lepas
+                            </p>
+                        </div>
+                         <!-- Card 5 -->
+                         <div class="card text-center relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-red-400"></div>
+                            <p class="text-xs text-gray-500 font-medium mb-1">Isu/ Aduan Selesai</p>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-1">87%</h4>
+                            <p class="text-xs text-green-600 flex justify-center items-center font-medium">
+                                <i data-lucide="arrow-up" class="w-3 h-3 mr-1"></i> 10.3% berbanding bulan lepas
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- First Row Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Sektor Chart -->
+                    <div class="card lg:col-span-2">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2">Ringkasan Prestasi Mengikut Sektor</h3>
+                        <div class="h-64">
+                            <canvas id="sektorChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Pie Chart -->
+                    <div class="card">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2">Taburan Sekolah Mengikut Tahap</h3>
+                        <div class="flex flex-col h-full justify-between pb-4">
+                             <div class="h-48 relative flex justify-center items-center">
+                                <canvas id="tahapChart"></canvas>
+                                <!-- Center Text for Doughnut -->
+                                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                                    <span class="text-xl font-bold text-gray-800">63</span>
+                                    <span class="text-[10px] text-gray-500 uppercase">Sekolah</span>
+                                </div>
+                            </div>
+                            <!-- Custom Legend -->
+                            <div class="mt-4 space-y-2 px-2 text-sm">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>Cemerlang</div>
+                                    <span class="font-medium">20 (31.7%)</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>Baik</div>
+                                    <span class="font-medium">28 (44.4%)</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-yellow-400 mr-2"></span>Memuaskan</div>
+                                    <span class="font-medium">12 (19.0%)</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>Perlu Intervensi</div>
+                                    <span class="font-medium">3 (4.9%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Line Chart -->
+                    <div class="card lg:col-span-1">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2">Trend Prestasi Utama</h3>
+                        <div class="h-48">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Notifikasi -->
+                    <div class="card lg:col-span-1 flex flex-col">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2">Notifikasi & Amaran</h3>
+                        <div class="space-y-3 flex-1 overflow-y-auto pr-2">
+                            <div class="flex items-start justify-between p-3 bg-red-50 rounded-lg border border-red-100">
+                                <div class="flex items-start">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Kehadiran Murid Bawah 90%</p>
+                                        <p class="text-xs text-gray-500">5 sekolah memerlukan perhatian segera</p>
+                                    </div>
+                                </div>
+                                <button class="text-xs px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50 text-gray-600">Lihat</button>
+                            </div>
+                            
+                            <div class="flex items-start justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
+                                <div class="flex items-start">
+                                    <i data-lucide="alert-circle" class="w-5 h-5 text-orange-500 mt-0.5 mr-3 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Laporan Bulanan Belum Dihantar</p>
+                                        <p class="text-xs text-gray-500">8 sekolah belum menghantar laporan</p>
+                                    </div>
+                                </div>
+                                <button class="text-xs px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50 text-gray-600">Lihat</button>
+                            </div>
+
+                            <div class="flex items-start justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <div class="flex items-start">
+                                    <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Kemas Kini Data</p>
+                                        <p class="text-xs text-gray-500">Sila kemaskini data akademik untuk Mei 2024</p>
+                                    </div>
+                                </div>
+                                <button class="text-xs px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50 text-gray-600">Lihat</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Aktiviti -->
+                    <div class="card lg:col-span-1 flex flex-col">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2 flex justify-between items-center">
+                            <span>Aktiviti Terkini</span>
+                            <a href="#" class="text-[10px] text-blue-600 hover:underline normal-case font-normal">Lihat Semua Aktiviti</a>
+                        </h3>
+                        <div class="relative flex-1 px-2">
+                            <!-- Timeline Line -->
+                            <div class="absolute left-4 top-2 bottom-0 w-0.5 bg-gray-200"></div>
+                            
+                            <div class="space-y-4">
+                                <div class="relative flex items-start pl-8">
+                                    <div class="absolute left-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center -ml-1 border-2 border-white">
+                                        <i data-lucide="file-check-2" class="w-3 h-3 text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-700 leading-tight">Laporan Pencapaian SPM 2023 dijana</p>
+                                        <p class="text-[10px] text-gray-500 mt-1">20/05/2024 10:15 AM</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="relative flex items-start pl-8">
+                                    <div class="absolute left-0 w-6 h-6 bg-teal-100 rounded-full flex items-center justify-center -ml-1 border-2 border-white">
+                                        <i data-lucide="refresh-cw" class="w-3 h-3 text-teal-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-700 leading-tight">Data Kehadiran Murid dikemaskini</p>
+                                        <p class="text-[10px] text-gray-500 mt-1">20/05/2024 09:45 AM</p>
+                                    </div>
+                                </div>
+
+                                <div class="relative flex items-start pl-8">
+                                    <div class="absolute left-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center -ml-1 border-2 border-white">
+                                        <i data-lucide="check-circle" class="w-3 h-3 text-green-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-700 leading-tight">Aduan Infrastruktur #INV-2024-015 selesai</p>
+                                        <p class="text-[10px] text-gray-500 mt-1">20/05/2024 09:30 AM</p>
+                                    </div>
+                                </div>
+
+                                <div class="relative flex items-start pl-8">
+                                    <div class="absolute left-0 w-6 h-6 bg-red-100 rounded-full flex items-center justify-center -ml-1 border-2 border-white">
+                                        <i data-lucide="presentation" class="w-3 h-3 text-red-600"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-700 leading-tight">Taklimat Dashboard kepada sekolah</p>
+                                        <p class="text-[10px] text-gray-500 mt-1">19/05/2024 03:00 PM</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Third Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Table Data -->
+                    <div class="card lg:col-span-1">
+                         <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide border-b pb-2">Ringkasan Data Utama</h3>
+                         <div class="overflow-x-auto">
+                             <table class="w-full text-xs text-left">
+                                 <thead class="text-gray-500 bg-gray-50 border-b">
+                                     <tr>
+                                         <th class="py-2 px-2 font-medium">Indikator</th>
+                                         <th class="py-2 px-2 font-medium text-center">Nilai Semasa</th>
+                                         <th class="py-2 px-2 font-medium text-center">Sasaran</th>
+                                         <th class="py-2 px-2 font-medium text-center">Pencapaian</th>
+                                         <th class="py-2 px-2 font-medium text-center">Status</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody class="divide-y">
+                                     <tr>
+                                         <td class="py-2 px-2">Kehadiran Murid</td>
+                                         <td class="py-2 px-2 text-center font-medium">95.6%</td>
+                                         <td class="py-2 px-2 text-center text-gray-500">95%</td>
+                                         <td class="py-2 px-2 text-center">100.6%</td>
+                                         <td class="py-2 px-2 text-center"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500 inline-block"></i></td>
+                                     </tr>
+                                     <tr>
+                                         <td class="py-2 px-2">Kadar Kelulusan</td>
+                                         <td class="py-2 px-2 text-center font-medium">92.3%</td>
+                                         <td class="py-2 px-2 text-center text-gray-500">90%</td>
+                                         <td class="py-2 px-2 text-center">102.6%</td>
+                                         <td class="py-2 px-2 text-center"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500 inline-block"></i></td>
+                                     </tr>
+                                      <tr>
+                                         <td class="py-2 px-2">Disiplin (Kes Selesai)</td>
+                                         <td class="py-2 px-2 text-center font-medium">87.0%</td>
+                                         <td class="py-2 px-2 text-center text-gray-500">85%</td>
+                                         <td class="py-2 px-2 text-center">102.4%</td>
+                                         <td class="py-2 px-2 text-center"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500 inline-block"></i></td>
+                                     </tr>
+                                      <tr>
+                                         <td class="py-2 px-2">Penyediaan Laporan</td>
+                                         <td class="py-2 px-2 text-center font-medium">90.5%</td>
+                                         <td class="py-2 px-2 text-center text-gray-500">90%</td>
+                                         <td class="py-2 px-2 text-center">100.6%</td>
+                                         <td class="py-2 px-2 text-center"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500 inline-block"></i></td>
+                                     </tr>
+                                 </tbody>
+                             </table>
+                         </div>
+                    </div>
+
+                    <!-- Peta (Placeholder using CSS styling to mimic map) -->
+                    <div class="card lg:col-span-1">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2">Peta Prestasi Sekolah</h3>
+                        <div class="h-40 bg-blue-50 rounded-lg flex items-center justify-center relative overflow-hidden">
+                            <!-- Abstract Map representation -->
+                            <svg viewBox="0 0 100 100" class="w-full h-full opacity-60" style="fill: #93c5fd;">
+                                <path d="M20,30 Q40,10 60,30 T90,50 Q70,80 40,70 T20,30" />
+                                <path d="M40,40 Q50,30 60,40 T70,50" style="fill: none; stroke: #3b82f6; stroke-width: 2;" />
+                            </svg>
+                            <!-- Dots -->
+                            <div class="absolute w-2 h-2 bg-green-500 rounded-full top-[40%] left-[30%] shadow"></div>
+                            <div class="absolute w-2 h-2 bg-blue-500 rounded-full top-[30%] left-[50%] shadow"></div>
+                            <div class="absolute w-2 h-2 bg-yellow-400 rounded-full top-[60%] left-[45%] shadow"></div>
+                            <div class="absolute w-2 h-2 bg-red-500 rounded-full top-[50%] left-[70%] shadow"></div>
+                            <div class="absolute w-2 h-2 bg-green-500 rounded-full top-[45%] left-[60%] shadow"></div>
+                            
+                            <div class="absolute bottom-2 right-2 bg-white/80 p-1.5 rounded text-[8px] flex flex-col gap-1 backdrop-blur-sm">
+                                <div class="flex items-center"><span class="w-2 h-2 rounded bg-green-500 mr-1"></span> Cemerlang</div>
+                                <div class="flex items-center"><span class="w-2 h-2 rounded bg-blue-500 mr-1"></span> Baik</div>
+                                <div class="flex items-center"><span class="w-2 h-2 rounded bg-yellow-400 mr-1"></span> Memuaskan</div>
+                                <div class="flex items-center"><span class="w-2 h-2 rounded bg-red-500 mr-1"></span> Perlu Intervensi</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pintasan Pantas -->
+                    <div class="card lg:col-span-1">
+                         <h3 class="text-sm font-semibold text-gray-700 mb-4 uppercase tracking-wide border-b pb-2">Pintasan Pantas</h3>
+                         <div class="grid grid-cols-4 gap-2 text-center h-40 items-center content-center">
+                             <a href="#" class="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-green-50 group transition-colors">
+                                 <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-2 group-hover:scale-110 transition-transform">
+                                     <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+                                 </div>
+                                 <span class="text-[10px] font-medium text-gray-600">Penjanaan<br>Laporan</span>
+                             </a>
+                             <a href="#" class="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-blue-50 group transition-colors">
+                                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-2 group-hover:scale-110 transition-transform">
+                                     <i data-lucide="download" class="w-5 h-5"></i>
+                                 </div>
+                                 <span class="text-[10px] font-medium text-gray-600">Muat Turun<br>Data</span>
+                             </a>
+                             <a href="#" class="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-purple-50 group transition-colors">
+                                 <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mb-2 group-hover:scale-110 transition-transform">
+                                     <i data-lucide="users-cog" class="w-5 h-5"></i>
+                                 </div>
+                                 <span class="text-[10px] font-medium text-gray-600">Pengurusan<br>Pengguna</span>
+                             </a>
+                             <a href="#" class="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 group transition-colors">
+                                 <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 mb-2 group-hover:scale-110 transition-transform">
+                                     <i data-lucide="help-circle" class="w-5 h-5"></i>
+                                 </div>
+                                 <span class="text-[10px] font-medium text-gray-600">Bantuan<br>Sistem</span>
+                             </a>
+                         </div>
+                    </div>
+
+                </div>
+                
+                <!-- Footer Tagline -->
+                <div class="text-center py-4">
+                    <p class="text-sm font-semibold text-ppd-blue italic">"Satu Data, Satu Platform, Satu Matlamat: Pendidikan Berkualiti untuk Semua"</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Common Chart Configuration
+        Chart.defaults.font.family = 'Inter';
+        Chart.defaults.color = '#6b7280';
+        Chart.defaults.scale.grid.color = '#f3f4f6';
+
+        // 1. Bar Chart - Prestasi Mengikut Sektor
+        const ctxSektor = document.getElementById('sektorChart').getContext('2d');
+        new Chart(ctxSektor, {
+            type: 'bar',
+            data: {
+                labels: ['Pengurusan', 'Akademik', 'HEM', 'Kokurikulum', 'ICT', 'Kewangan', 'Infrastruktur'],
+                datasets: [
+                    {
+                        label: 'Sasaran KPI',
+                        data: [80, 85, 80, 75, 80, 85, 75],
+                        backgroundColor: '#3b82f6', // Blue
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Pencapaian (%)',
+                        data: [82, 82, 85, 78, 75, 80, 68],
+                        backgroundColor: '#22c55e', // Green
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    },
+                    {
+                        label: 'Jurang (%)',
+                        data: [0, 3, 0, 0, 5, 5, 7],
+                        backgroundColor: '#f59e0b', // Yellow/Orange
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 20,
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 25, callback: function(value) { return value + '%'; } }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 2. Doughnut Chart - Taburan Sekolah
+        const ctxTahap = document.getElementById('tahapChart').getContext('2d');
+        new Chart(ctxTahap, {
+            type: 'doughnut',
+            data: {
+                labels: ['Cemerlang', 'Baik', 'Memuaskan', 'Perlu Intervensi'],
+                datasets: [{
+                    data: [20, 28, 12, 3],
+                    backgroundColor: [
+                        '#22c55e', // Green
+                        '#3b82f6', // Blue
+                        '#facc15', // Yellow
+                        '#ef4444'  // Red
+                    ],
+                    borderWidth: 0,
+                    cutout: '75%' // Creates the thin ring
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // We built a custom HTML legend
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + ' Sekolah';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 3. Line Chart - Trend Prestasi
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['Jan 2024', 'Feb 2024', 'Mac 2024', 'Apr 2024', 'Mei 2024'],
+                datasets: [
+                    {
+                        label: 'Kehadiran Murid (%)',
+                        data: [92, 94, 91, 93, 95.6],
+                        borderColor: '#3b82f6', // Blue
+                        backgroundColor: '#3b82f6',
+                        tension: 0.3,
+                        pointRadius: 3,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Kadar Kelulusan (%)',
+                        data: [88, 89, 87, 89, 92.3],
+                        borderColor: '#22c55e', // Green
+                        backgroundColor: '#22c55e',
+                        tension: 0.3,
+                        pointRadius: 3,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Disiplin (Selesai %)',
+                        data: [75, 78, 76, 79, 87],
+                        borderColor: '#8b5cf6', // Purple
+                        backgroundColor: '#8b5cf6',
+                        tension: 0.3,
+                        pointRadius: 3,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 6,
+                            font: { size: 9 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 70,
+                        max: 100,
+                        ticks: { stepSize: 10, callback: function(value) { return value + '%'; } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
