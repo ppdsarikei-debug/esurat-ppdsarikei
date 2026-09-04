@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Surat PPD Sarikei</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tambahan Pustaka (Library) untuk PDF dan Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        // KPM Dark Blue variant
+                        brand: { 50: '#f0f5fa', 100: '#e1ebf4', 500: '#1a365d', 600: '#142a4a', 700: '#0b244d' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 200ms, transform 200ms; }
+        .modal-leave { opacity: 1; transform: scale(1); }
+        .modal-leave-active { opacity: 0; transform: scale(0.95); transition: opacity 200ms, transform 200ms; }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-gray-800 overflow-hidden">
+
+    <!-- Top Navigation -->
+    <header class="bg-brand-700 shadow-md flex-shrink-0 z-20 border-b-4 border-yellow-500">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-4">
+                    <div class="bg-white p-1 rounded-md h-14 flex items-center justify-center">
+                        <img src="Logo PPD_Hitam.png" alt="Logo KPM PPD Sarikei" class="h-12 w-auto object-contain">
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-white leading-tight tracking-wide">e-Surat PPD Sarikei</h1>
+                        <p class="text-xs sm:text-sm text-yellow-400 font-medium tracking-wider uppercase">Sistem Pengurusan Surat Rasmi</p>
+                    </div>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button onclick="toggleMobileMenu()" class="text-white hover:text-yellow-400 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout Container -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white shadow-lg border-r border-gray-200 flex-shrink-0 hidden md:flex flex-col z-10 absolute md:relative h-full transition-transform transform -translate-x-full md:translate-x-0">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center md:hidden">
+                <span class="font-bold text-gray-700">Menu</span>
+                <button onclick="toggleMobileMenu()" class="text-gray-500 hover:text-red-500">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
+                <button id="nav-borang" onclick="switchTab('borang')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors bg-brand-50 text-brand-700">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Borang Rekod Baru
+                </button>
+                <button id="nav-senarai" onclick="switchTab('senarai')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                    Senarai Surat
+                </button>
+                <button id="nav-dashboard" onclick="switchTab('dashboard')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    Dashboard & Laporan
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8 w-full">
+            
+            <!-- View: Borang Rekod Baru -->
+            <div id="borangView" class="max-w-4xl mx-auto space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-1" id="borang-title">Rekod Surat Baharu</h2>
+                    <p class="text-sm text-gray-500" id="borang-subtitle">Sila isi maklumat surat masuk atau keluar dengan lengkap.</p>
+                </div>
+
+                <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+                    <form id="suratForm" onsubmit="saveRecord(event)">
+                        <div class="px-4 py-6 sm:p-8">
+                            <input type="hidden" id="editId">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-gray-100 pb-8 mb-8">
+                                <!-- Jenis Surat -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-3">Kategori Surat <span class="text-red-500">*</span></label>
+                                    <div class="flex items-center space-x-8 bg-gray-50 p-4 rounded-lg border border-gray-200 inline-flex">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="jenis" value="masuk" checked class="h-5 w-5 text-brand-600 focus:ring-brand-500 border-gray-300" onchange="toggleLabels()">
+                                            <span class="ml-2 text-sm font-medium text-gray-800">Surat Masuk</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="jenis" value="keluar" class="h-5 w-5 text-brand-600 focus:ring-brand-500 border-gray-300" onchange="toggleLabels()">
+                                            <span class="ml-2 text-sm font-medium text-gray-800">Surat Keluar</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Tarikh Penerimaan/Penghantaran -->
+                                <div>
+                                    <label id="labelTarikhTerima" class="block text-sm font-medium text-gray-700 mb-1">Tarikh Penerimaan <span class="text-red-500">*</span></label>
+                                    <input type="date" id="tarikhPenerimaan" required class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                                </div>
+
+                                <!-- Tarikh Surat -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tarikh Surat Dikeluarkan</label>
+                                    <input type="date" id="tarikhSurat" class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- No Fail KPM -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">No. Fail Kementerian / Ibu Pejabat <span class="text-red-500">*</span></label>
+                                    <input type="text" id="noFail" required placeholder="Cth: KPM.100-1/2/3 Jld.4 (55)" class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                                </div>
+
+                                <!-- No Lain -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombor Rujukan Yang Lain (Jika ada)</label>
+                                    <input type="text" id="noLain" placeholder="Cth: JPNS.100-1/2/1 (20)" class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                                </div>
+
+                                <!-- Daripada / Kepada -->
+                                <div class="md:col-span-2">
+                                    <label id="labelPihak" class="block text-sm font-medium text-gray-700 mb-1">Daripada Siapa <span class="text-red-500">*</span></label>
+                                    <input type="text" id="pihak" required class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                                </div>
+
+                                <!-- Perkara -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Perkara / Tajuk Surat <span class="text-red-500">*</span></label>
+                                    <textarea id="perkara" rows="3" required class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm"></textarea>
+                                </div>
+
+                                <!-- Dirujuk Kepada -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Dirujukkan Kepada / Tindakan</label>
+                                    <input type="text" id="rujukanKepada" placeholder="Cth: Unit Pentadbiran, Semua Sekolah" class="block w-full border border-gray-300 rounded-md shadow-sm py-2.5 px-3 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-4 sm:px-8 sm:flex sm:flex-row-reverse border-t border-gray-200">
+                            <button type="submit" id="btnSubmitForm" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2.5 bg-brand-600 text-base font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Simpan Rekod
+                            </button>
+                            <button type="button" onclick="resetForm(true)" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-6 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Set Semula / Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- View: Senarai Surat -->
+            <div id="senaraiView" class="hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 mb-1">Senarai Rekod Surat</h2>
+                        <p class="text-sm text-gray-500">Cari dan urus surat yang telah direkodkan.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative">
+                            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari surat..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 sm:text-sm w-full sm:w-64">
+                            <svg class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <select id="jenisSuratFilter" onchange="filterTable()" class="block w-full sm:w-40 pl-3 pr-8 py-2 text-base border border-gray-300 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm rounded-lg bg-white cursor-pointer">
+                            <option value="all">Semua Jenis</option>
+                            <option value="masuk">Surat Masuk</option>
+                            <option value="keluar">Surat Keluar</option>
+                        </select>
+                        <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Eksport CSV
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">No</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Jenis</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Tarikh Terima/Hantar</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[200px]">Butiran Fail & Rujukan</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider min-w-[250px]">Pihak & Perkara</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tindakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Data dipaparkan di sini melalui JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noDataMessage" class="hidden py-10 text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="text-base font-medium">Tiada rekod dijumpai.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View: Dashboard & Laporan -->
+            <div id="dashboardView" class="hidden space-y-6">
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Laporan Pengurusan Surat</h2>
+                        <p class="text-sm text-gray-500">Analitik surat masuk dan keluar untuk tujuan pembentangan & audit.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <label for="yearFilter" class="text-sm font-medium text-gray-700">Tahun:</label>
+                            <select id="yearFilter" onchange="renderDashboard()" class="block w-28 pl-3 pr-8 py-2 text-base border-gray-300 border rounded-lg focus:outline-none focus:ring-brand-500 focus:border-brand-500 bg-gray-50 font-medium cursor-pointer">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="h-8 w-px bg-gray-300 hidden sm:block"></div>
+                        <div class="flex border border-gray-300 rounded-lg overflow-hidden shadow-sm bg-white">
+                            <button onclick="exportReportPDF()" class="hover:bg-red-50 text-red-600 px-3 py-2 text-sm font-medium border-r border-gray-300 flex items-center gap-1 transition-colors" title="Muat Turun PDF">
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                                PDF
+                            </button>
+                            <button onclick="exportReportExcel()" class="hover:bg-green-50 text-green-600 px-3 py-2 text-sm font-medium border-r border-gray-300 flex items-center gap-1 transition-colors" title="Muat Turun Excel">
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                                Excel
+                            </button>
+                            <button onclick="exportReportWord()" class="hover:bg-blue-50 text-blue-600 px-3 py-2 text-sm font-medium flex items-center gap-1 transition-colors" title="Muat Turun Word">
+                                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                                Word
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reportContent" class="space-y-6 pt-2">
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 bg-brand-100 rounded-lg p-3">
+                                        <svg class="h-6 w-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Jumlah Keseluruhan</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900" id="statTotal">0</dd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 bg-emerald-100 rounded-lg p-3">
+                                        <svg class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Surat Masuk</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900" id="statMasuk">0</dd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 bg-amber-100 rounded-lg p-3">
+                                        <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dt class="text-sm font-medium text-gray-500 truncate">Surat Keluar</dt>
+                                        <dd class="text-2xl font-semibold text-gray-900" id="statKeluar">0</dd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Bar Chart: Monthly trend -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-base font-bold text-gray-900 mb-4 text-center">Trend Bulanan</h3>
+                            <div class="relative h-72 w-full">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Pie Chart: File distribution -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="text-base font-bold text-gray-900 mb-4 text-center">Pecahan Kategori Fail Utama</h3>
+                            <div class="relative h-72 w-full flex justify-center">
+                                <canvas id="fileChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- Penamat reportContent -->
+            </div> <!-- Penamat dashboardView -->
+        </main>
+    </div> <!-- Penamat Main Layout -->
+
+    <!-- Modal Padam (Delete) -->
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('deleteModal')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-delete">Padam Rekod</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500">Adakah anda pasti untuk memadam rekod surat ini? Tindakan ini tidak boleh diundurkan.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200">
+                    <button type="button" onclick="deleteRecord()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">Ya, Padam</button>
+                    <button type="button" onclick="closeModal('deleteModal')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert / Toast Message -->
+    <div id="alertContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        // Data Contoh
+        let suratData = [
+            { id: 1, jenis: 'masuk', tarikhPenerimaan: '2023-10-25', noFail: 'KPM.100-1/2/3 Jld.4 (55)', noLain: 'JPNS.100-1/2/1 (20)', tarikhSurat: '2023-10-20', pihak: 'Pengarah Pendidikan Negeri Sarawak', perkara: 'Jemputan Ke Taklimat Pengurusan Aset Suku Tahun Ke-4', rujukanKepada: 'Unit Pentadbiran' },
+            { id: 2, jenis: 'keluar', tarikhPenerimaan: '2023-10-26', noFail: 'PPDS.500-4/1/1 (12)', noLain: '', tarikhSurat: '2023-10-26', pihak: 'Semua Pengetua & Guru Besar', perkara: 'Penghantaran Laporan Prestasi Perbelanjaan', rujukanKepada: 'Semua Sekolah' },
+            { id: 3, jenis: 'masuk', tarikhPenerimaan: '2024-01-05', noFail: 'KPM.100-1/2/3 Jld.5 (1)', noLain: '', tarikhSurat: '2024-01-02', pihak: 'KPM', perkara: 'Amanat Tahun Baharu 2024', rujukanKepada: 'Semua Warga PPD' },
+            { id: 4, jenis: 'keluar', tarikhPenerimaan: '2024-01-15', noFail: 'PPDS.100-1/2/1 (1)', noLain: '', tarikhSurat: '2024-01-15', pihak: 'Semua Sekolah', perkara: 'Takwim Aktiviti PPD Tahun 2024', rujukanKepada: 'Semua Sekolah' },
+            { id: 5, jenis: 'masuk', tarikhPenerimaan: '2024-02-10', noFail: 'JPNS.400-2/1/1 (2)', noLain: '', tarikhSurat: '2024-02-05', pihak: 'JPNS', perkara: 'Penyelarasan Data Enrolmen Murid', rujukanKepada: 'Sektor Pengurusan Murid' }
+        ];
+        
+        let currentId = 6;
+        let itemToDelete = null;
+        let monthlyChartInstance = null;
+        let fileChartInstance = null;
+
+        window.onload = function() {
+            filterTable();
+            // Default view is Borang Rekod Baru
+            document.getElementById('tarikhPenerimaan').valueAsDate = new Date();
+        };
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+            }
+        }
+
+        // Tab Switching Logic
+        function switchTab(tab) {
+            const views = {
+                'borang': document.getElementById('borangView'),
+                'senarai': document.getElementById('senaraiView'),
+                'dashboard': document.getElementById('dashboardView')
+            };
+
+            const navs = {
+                'borang': document.getElementById('nav-borang'),
+                'senarai': document.getElementById('nav-senarai'),
+                'dashboard': document.getElementById('nav-dashboard')
+            };
+
+            // Hide all views and reset nav styles
+            for (const key in views) {
+                views[key].classList.add('hidden');
+                
+                navs[key].className = 'w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors';
+            }
+
+            // Show selected view and set active nav style
+            views[tab].classList.remove('hidden');
+            navs[tab].className = 'w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors bg-brand-50 text-brand-700';
+
+            // Additional logic for specific tabs
+            if (tab === 'dashboard') {
+                populateYearFilter();
+                renderDashboard();
+            } else if (tab === 'senarai') {
+                filterTable();
+            }
+
+            // Close mobile menu if open
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const jenisFilter = document.getElementById('jenisSuratFilter').value;
+
+            const filteredData = suratData.filter(item => {
+                const matchSearch = item.perkara.toLowerCase().includes(searchTerm) || 
+                                    item.noFail.toLowerCase().includes(searchTerm) ||
+                                    item.pihak.toLowerCase().includes(searchTerm) ||
+                                    (item.noLain && item.noLain.toLowerCase().includes(searchTerm));
+                
+                const matchJenis = jenisFilter === 'all' || item.jenis === jenisFilter;
+
+                return matchSearch && matchJenis;
+            });
+
+            renderTable(filteredData);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            const noData = document.getElementById('noDataMessage');
+            
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                noData.classList.remove('hidden');
+            } else {
+                noData.classList.add('hidden');
+                
+                data.sort((a, b) => new Date(b.tarikhPenerimaan) - new Date(a.tarikhPenerimaan)).forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50 transition-colors';
+                    
+                    const badgeClass = item.jenis === 'masuk' 
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+                        : 'bg-amber-100 text-amber-800 border-amber-200';
+                    const badgeText = item.jenis === 'masuk' ? 'Surat Masuk' : 'Surat Keluar';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${badgeClass}">
+                                ${badgeText}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${formatDate(item.tarikhPenerimaan)}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="text-gray-900 font-medium">${item.noFail}</div>
+                            ${item.noLain ? `<div class="text-gray-500 text-xs mt-1">Lain: ${item.noLain}</div>` : ''}
+                            ${item.tarikhSurat ? `<div class="text-gray-500 text-xs mt-1">Trkh Srt: ${formatDate(item.tarikhSurat)}</div>` : ''}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="text-gray-900 font-semibold mb-1">${item.pihak}</div>
+                            <div class="text-gray-600 line-clamp-2" title="${item.perkara}">${item.perkara}</div>
+                            ${item.rujukanKepada ? `<div class="text-brand-600 text-xs mt-1 font-medium">Tindakan: ${item.rujukanKepada}</div>` : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-3">
+                                <button onclick="editRecord(${item.id})" class="text-brand-600 hover:text-brand-900 transition-colors bg-brand-50 p-1.5 rounded" title="Kemaskini">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button onclick="confirmDelete(${item.id})" class="text-red-600 hover:text-red-900 transition-colors bg-red-50 p-1.5 rounded" title="Padam">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function toggleLabels() {
+            const isMasuk = document.querySelector('input[name="jenis"]:checked').value === 'masuk';
+            document.getElementById('labelTarikhTerima').innerHTML = isMasuk ? 'Tarikh Penerimaan <span class="text-red-500">*</span>' : 'Tarikh Penghantaran <span class="text-red-500">*</span>';
+            document.getElementById('labelPihak').innerHTML = isMasuk ? 'Daripada Siapa <span class="text-red-500">*</span>' : 'Kepada Siapa <span class="text-red-500">*</span>';
+        }
+
+        function resetForm(returnToList = false) {
+            document.getElementById('suratForm').reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('borang-title').textContent = 'Rekod Surat Baharu';
+            document.getElementById('borang-subtitle').textContent = 'Sila isi maklumat surat masuk atau keluar dengan lengkap.';
+            document.getElementById('btnSubmitForm').textContent = 'Simpan Rekod';
+            document.getElementById('tarikhPenerimaan').valueAsDate = new Date();
+            toggleLabels();
+            
+            if (returnToList && document.getElementById('borang-title').textContent !== 'Rekod Surat Baharu') {
+                switchTab('senarai');
+            }
+        }
+
+        function saveRecord(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editId').value;
+            
+            const newRecord = {
+                id: editId ? parseInt(editId) : currentId++,
+                jenis: document.querySelector('input[name="jenis"]:checked').value,
+                tarikhPenerimaan: document.getElementById('tarikhPenerimaan').value,
+                tarikhSurat: document.getElementById('tarikhSurat').value,
+                noFail: document.getElementById('noFail').value,
+                noLain: document.getElementById('noLain').value,
+                pihak: document.getElementById('pihak').value,
+                perkara: document.getElementById('perkara').value,
+                rujukanKepada: document.getElementById('rujukanKepada').value
+            };
+
+            if (editId) {
+                const index = suratData.findIndex(item => item.id === parseInt(editId));
+                if (index !== -1) suratData[index] = newRecord;
+                showAlert('Rekod surat telah berjaya dikemaskini.', 'success');
+                resetForm();
+                switchTab('senarai'); // Return to list after edit
+            } else {
+                suratData.unshift(newRecord);
+                showAlert('Surat baharu telah berjaya direkodkan.', 'success');
+                resetForm(); // Stay on form for continuous entry
+            }
+        }
+
+        function editRecord(id) {
+            const item = suratData.find(d => d.id === id);
+            if (!item) return;
+
+            // Switch to Borang View
+            switchTab('borang');
+
+            document.getElementById('editId').value = item.id;
+            document.querySelector(`input[name="jenis"][value="${item.jenis}"]`).checked = true;
+            document.getElementById('tarikhPenerimaan').value = item.tarikhPenerimaan;
+            document.getElementById('tarikhSurat').value = item.tarikhSurat || '';
+            document.getElementById('noFail').value = item.noFail;
+            document.getElementById('noLain').value = item.noLain || '';
+            document.getElementById('pihak').value = item.pihak;
+            document.getElementById('perkara').value = item.perkara;
+            document.getElementById('rujukanKepada').value = item.rujukanKepada || '';
+
+            document.getElementById('borang-title').textContent = 'Kemaskini Rekod Surat';
+            document.getElementById('borang-subtitle').textContent = 'Sila kemaskini maklumat di bawah dan simpan.';
+            document.getElementById('btnSubmitForm').textContent = 'Simpan Kemaskini';
+            
+            toggleLabels();
+        }
+
+        function confirmDelete(id) {
+            itemToDelete = id;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function deleteRecord() {
+            if (itemToDelete !== null) {
+                suratData = suratData.filter(item => item.id !== itemToDelete);
+                itemToDelete = null;
+                filterTable();
+                
+                showAlert('Rekod surat telah berjaya dipadam.', 'success');
+                closeModal('deleteModal');
+            }
+        }
+
+        // FUNGSI EKSPORT CSV
+        function exportToCSV() {
+            if (suratData.length === 0) {
+                showAlert('Tiada data untuk dieksport.', 'info');
+                return;
+            }
+
+            const headers = ['Bil', 'Jenis Surat', 'Tarikh Penerimaan / Penghantaran', 'No. Fail Kementerian / Ibu Pejabat', 'Nombor Rujukan Lain', 'Tarikh Surat', 'Daripada / Kepada', 'Perkara', 'Dirujukkan Kepada'];
+            
+            const escapeCSV = (str) => {
+                if (str === null || str === undefined) return '""';
+                const stringified = String(str);
+                if (stringified.includes(',') || stringified.includes('"') || stringified.includes('\n')) {
+                    return `"${stringified.replace(/"/g, '""')}"`;
+                }
+                return stringified;
+            };
+
+            let csvContent = headers.join(',') + '\n';
+            const sortedData = [...suratData].sort((a, b) => new Date(b.tarikhPenerimaan) - new Date(a.tarikhPenerimaan));
+
+            sortedData.forEach((item, index) => {
+                const row = [
+                    index + 1,
+                    item.jenis === 'masuk' ? 'Surat Masuk' : 'Surat Keluar',
+                    escapeCSV(item.tarikhPenerimaan),
+                    escapeCSV(item.noFail),
+                    escapeCSV(item.noLain),
+                    escapeCSV(item.tarikhSurat),
+                    escapeCSV(item.pihak),
+                    escapeCSV(item.perkara),
+                    escapeCSV(item.rujukanKepada)
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const dateStr = new Date().toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Database_Surat_PPD_Sarikei_${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAlert('Fail CSV berjaya dijana.', 'success');
+        }
+
+        // --- FUNGSI EKSPORT LAPORAN & DOKUMENTASI ---
+
+        function exportReportPDF() {
+            showAlert('Sedang menjana laporan PDF...', 'info');
+            const element = document.getElementById('reportContent');
+            const selectedYear = document.getElementById('yearFilter').value;
+            
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5],
+                filename:     `Laporan_Dashboard_PPD_${selectedYear}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                showAlert('Laporan PDF berjaya dimuat turun.', 'success');
+            });
+        }
+
+        function exportReportExcel() {
+            const selectedYear = parseInt(document.getElementById('yearFilter').value) || new Date().getFullYear();
+            
+            // Dapatkan data tahun yang dipilih dan susun mengikut tarikh terkini
+            const yearData = suratData.filter(item => {
+                if(!item.tarikhPenerimaan) return false;
+                return new Date(item.tarikhPenerimaan).getFullYear() === selectedYear;
+            }).sort((a,b) => new Date(b.tarikhPenerimaan) - new Date(a.tarikhPenerimaan));
+
+            if (yearData.length === 0) {
+                showAlert(`Tiada rekod surat untuk tahun ${selectedYear}.`, 'info');
+                return;
+            }
+
+            // Memformat data untuk Excel
+            const excelData = yearData.map((item, index) => ({
+                'Bil': index + 1,
+                'Kategori': item.jenis === 'masuk' ? 'Surat Masuk' : 'Surat Keluar',
+                'Tarikh Terima/Hantar': formatDate(item.tarikhPenerimaan),
+                'No. Fail Kementerian/Ibu Pejabat': item.noFail,
+                'Nombor Rujukan Lain': item.noLain || '-',
+                'Tarikh Surat': formatDate(item.tarikhSurat),
+                'Daripada / Kepada Pihak': item.pihak,
+                'Perkara / Tajuk': item.perkara,
+                'Dirujukkan Kepada / Tindakan': item.rujukanKepada || '-'
+            }));
+
+            // Menggunakan SheetJS untuk menjana xlsx
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            const wb = XLSX.utils.book_new();
+            
+            // Melebarkan lajur (column widths)
+            const wscols = [
+                {wch: 5}, {wch: 15}, {wch: 20}, {wch: 25}, {wch: 25}, 
+                {wch: 15}, {wch: 35}, {wch: 50}, {wch: 25}
+            ];
+            ws['!cols'] = wscols;
+
+            XLSX.utils.book_append_sheet(wb, ws, `Data ${selectedYear}`);
+            XLSX.writeFile(wb, `Laporan_Surat_PPD_Sarikei_${selectedYear}.xlsx`);
+            
+            showAlert('Laporan Excel (.xlsx) berjaya dimuat turun.', 'success');
+        }
+
+        function exportReportWord() {
+            const selectedYear = parseInt(document.getElementById('yearFilter').value) || new Date().getFullYear();
+            
+            const total = document.getElementById('statTotal').innerText;
+            const masuk = document.getElementById('statMasuk').innerText;
+            const keluar = document.getElementById('statKeluar').innerText;
+
+            let html = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Laporan Pengurusan Surat</title></head>
+                <body style="font-family: Arial, sans-serif;">
+                    <h1 style="text-align:center; color: #0b244d;">LAPORAN PENGURUSAN SURAT</h1>
+                    <h2 style="text-align:center;">PEJABAT PENDIDIKAN DAERAH SARIKEI</h2>
+                    <h3 style="text-align:center;">TAHUN: ${selectedYear}</h3>
+                    <hr>
+                    <br>
+                    <h3>1. RINGKASAN STATISTIK</h3>
+                    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%; max-width: 600px;">
+                        <tr style="background-color: #f3f4f6;">
+                            <th align="left">Kategori Surat</th>
+                            <th align="center">Jumlah Rekod</th>
+                        </tr>
+                        <tr>
+                            <td>Surat Masuk</td>
+                            <td align="center">${masuk}</td>
+                        </tr>
+                        <tr>
+                            <td>Surat Keluar</td>
+                            <td align="center">${keluar}</td>
+                        </tr>
+                        <tr style="background-color: #f8fafc;">
+                            <td><b>Jumlah Keseluruhan</b></td>
+                            <td align="center"><b>${total}</b></td>
+                        </tr>
+                    </table>
+                    <br>
+                    <h3>2. SENARAI REKOD SURAT (TAHUN ${selectedYear})</h3>
+                    <table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%; font-size: 11px;">
+                        <tr style="background-color: #f3f4f6;">
+                            <th>Bil</th>
+                            <th>Kategori</th>
+                            <th>Tarikh</th>
+                            <th>No. Fail</th>
+                            <th>Pihak (Daripada/Kepada)</th>
+                            <th>Perkara</th>
+                        </tr>
+            `;
+
+            const yearData = suratData.filter(item => {
+                if(!item.tarikhPenerimaan) return false;
+                return new Date(item.tarikhPenerimaan).getFullYear() === selectedYear;
+            }).sort((a,b) => new Date(b.tarikhPenerimaan) - new Date(a.tarikhPenerimaan));
+
+            yearData.forEach((item, index) => {
+                html += `<tr>
+                    <td align="center">${index + 1}</td>
+                    <td align="center">${item.jenis === 'masuk' ? 'Masuk' : 'Keluar'}</td>
+                    <td align="center">${formatDate(item.tarikhPenerimaan)}</td>
+                    <td>${item.noFail}</td>
+                    <td>${item.pihak}</td>
+                    <td>${item.perkara}</td>
+                </tr>`;
+            });
+
+            html += `
+                    </table>
+                    <br><br>
+                    <p style="text-align:right; font-size: 10px; color: gray;">
+                        <i>Laporan dijana oleh Sistem e-Surat PPD Sarikei pada ${formatDate(new Date())}</i>
+                    </p>
+                </body></html>`;
+
+            // Bina fail format MS Word .doc
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Laporan_Surat_PPD_Sarikei_${selectedYear}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAlert('Laporan Word berjaya dimuat turun.', 'success');
+        }
+
+        function populateYearFilter() {
+            const yearSelect = document.getElementById('yearFilter');
+            const years = new Set();
+            
+            suratData.forEach(item => {
+                if(item.tarikhPenerimaan) {
+                    years.add(new Date(item.tarikhPenerimaan).getFullYear());
+                }
+            });
+
+            if(years.size === 0) years.add(new Date().getFullYear());
+
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            const currentSelected = yearSelect.value;
+            
+            yearSelect.innerHTML = '';
+            
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+
+            if (currentSelected && sortedYears.includes(parseInt(currentSelected))) {
+                yearSelect.value = currentSelected;
+            }
+        }
+
+        function renderDashboard() {
+            const selectedYear = parseInt(document.getElementById('yearFilter').value) || new Date().getFullYear();
+            
+            const yearData = suratData.filter(item => {
+                if(!item.tarikhPenerimaan) return false;
+                return new Date(item.tarikhPenerimaan).getFullYear() === selectedYear;
+            });
+
+            document.getElementById('statTotal').textContent = yearData.length;
+            document.getElementById('statMasuk').textContent = yearData.filter(i => i.jenis === 'masuk').length;
+            document.getElementById('statKeluar').textContent = yearData.filter(i => i.jenis === 'keluar').length;
+
+            const monthLabels = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+            const masukData = new Array(12).fill(0);
+            const keluarData = new Array(12).fill(0);
+
+            yearData.forEach(item => {
+                const month = new Date(item.tarikhPenerimaan).getMonth();
+                if(item.jenis === 'masuk') masukData[month]++;
+                else if(item.jenis === 'keluar') keluarData[month]++;
+            });
+
+            const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+            
+            monthlyChartInstance = new Chart(ctxMonthly, {
+                type: 'bar',
+                data: {
+                    labels: monthLabels,
+                    datasets: [
+                        { label: 'Surat Masuk', data: masukData, backgroundColor: '#059669', borderRadius: 4 },
+                        { label: 'Surat Keluar', data: keluarData, backgroundColor: '#d97706', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            const fileCounts = {};
+            yearData.forEach(item => {
+                let prefix = item.noFail.split(' ')[0] || 'Lain-lain';
+                prefix = prefix.split('-')[0];
+                fileCounts[prefix] = (fileCounts[prefix] || 0) + 1;
+            });
+
+            const sortedFiles = Object.entries(fileCounts).sort((a, b) => b[1] - a[1]);
+            const top5Files = sortedFiles.slice(0, 5);
+            const otherCount = sortedFiles.slice(5).reduce((sum, [_, count]) => sum + count, 0);
+            if (otherCount > 0) top5Files.push(['Lain-lain', otherCount]);
+
+            const ctxFile = document.getElementById('fileChart').getContext('2d');
+            if (fileChartInstance) fileChartInstance.destroy();
+
+            fileChartInstance = new Chart(ctxFile, {
+                type: 'doughnut',
+                data: {
+                    labels: top5Files.length > 0 ? top5Files.map(f => f[0]) : ['Tiada Data'],
+                    datasets: [{
+                        data: top5Files.length > 0 ? top5Files.map(f => f[1]) : [1],
+                        backgroundColor: top5Files.length > 0 ? ['#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777', '#64748b'] : ['#e2e8f0'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '65%',
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('ms-MY', options);
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertBox = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200';
+            const textClass = type === 'success' ? 'text-green-800' : 'text-blue-800';
+            
+            alertBox.className = `p-4 mb-2 border rounded-lg shadow-sm flex items-center transition-all duration-500 ease-in-out transform translate-x-full z-50 ${bgClass}`;
+            alertBox.innerHTML = `
+                <div class="ml-3 font-medium text-sm ${textClass}">${message}</div>
+            `;
+            
+            const container = document.getElementById('alertContainer');
+            container.appendChild(alertBox);
+            
+            setTimeout(() => {
+                alertBox.classList.remove('translate-x-full');
+            }, 10);
+            
+            setTimeout(() => {
+                alertBox.classList.add('opacity-0');
+                setTimeout(() => alertBox.remove(), 500);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
